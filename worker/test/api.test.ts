@@ -250,6 +250,39 @@ describe("POST /posts", () => {
   });
 });
 
+describe("POST /posts/:id/report", () => {
+  it("increments the post report count", async () => {
+    const first = await request("/posts/post-001/report", { method: "POST" });
+    expect(first.status).toBe(200);
+    expect(await first.json()).toEqual({ reportCount: 1 });
+
+    const second = await request("/posts/post-001/report", { method: "POST" });
+    expect(second.status).toBe(200);
+    expect(await second.json()).toEqual({ reportCount: 2 });
+  });
+
+  it("returns 404 for an unknown post", async () => {
+    const response = await request("/posts/missing/report", { method: "POST" });
+    expect(response.status).toBe(404);
+  });
+
+  it("keeps the reported post in the feed", async () => {
+    const reportResponse = await request("/posts/post-001/report", {
+      method: "POST",
+    });
+    expect(reportResponse.status).toBe(200);
+
+    const feedResponse = await request("/posts");
+    expect(feedResponse.status).toBe(200);
+
+    const posts = (await feedResponse.json()) as Array<{ id: string }>;
+    expect(posts.some((post) => post.id === "post-001")).toBe(true);
+
+    const detailResponse = await request("/posts/post-001");
+    expect(detailResponse.status).toBe(200);
+  });
+});
+
 describe("GET /images/:key", () => {
   it("returns image bytes from R2", async () => {
     const imageBytes = new Uint8Array([137, 80, 78, 71]);

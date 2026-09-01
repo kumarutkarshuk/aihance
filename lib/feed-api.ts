@@ -26,8 +26,8 @@ class FeedApiError extends Error {
   }
 }
 
-async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${getFeedApiUrl()}${path}`);
+async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${getFeedApiUrl()}${path}`, init);
 
   if (!response.ok) {
     let message = `Request failed with status ${response.status}`;
@@ -59,6 +59,16 @@ export async function fetchPost(id: string): Promise<PostDetail> {
 
 export async function fetchTags(): Promise<Tag[]> {
   return fetchJson<Tag[]>("/tags");
+}
+
+export interface ReportResult {
+  reportCount: number;
+}
+
+export async function reportPost(id: string): Promise<ReportResult> {
+  return fetchJson<ReportResult>(`/posts/${encodeURIComponent(id)}/report`, {
+    method: "POST",
+  });
 }
 
 export { FeedApiError };

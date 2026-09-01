@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { FeedErrorState } from "@/components/feed-states";
+import { PostActions } from "@/components/post-actions";
 import { fetchPost, fetchTags, type PostDetail, type Tag } from "@/lib/feed-api";
 
 function formatPublishedDate(isoDate: string): string {
@@ -124,6 +125,12 @@ export default function PostDetailScreen() {
         ) : (
           <Text style={styles.noPrompt}>No prompt for this Post.</Text>
         )}
+
+        <PostActions
+          postId={post.id}
+          prompt={post.prompt}
+          imageUrl={post.imageUrl}
+        />
       </View>
     </ScrollView>
   );

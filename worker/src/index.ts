@@ -291,6 +291,23 @@ async function createPost(
   return jsonResponse(post, 201);
 }
 
+async function reportPost(
+  env: Env,
+  id: string,
+): Promise<{ reportCount: number } | null> {
+  const updated = await env.DB.prepare(
+    "UPDATE posts SET report_count = report_count + 1 WHERE id = ?1 RETURNING report_count",
+  )
+    .bind(id)
+    .first<{ report_count: number }>();
+
+  if (!updated) {
+    return null;
+  }
+
+  return { reportCount: updated.report_count };
+}
+
 async function serveImage(env: Env, key: string): Promise<Response> {
   const object = await env.IMAGES.get(key);
   if (!object) {
@@ -343,6 +360,18 @@ export default {
           response.headers.set(key, value);
         }
         return response;
+      }
+
+      const reportMatch = pathname.match(/^\/posts\/([^/]+)\/report$/);
+      if (request.method === "POST" && reportMatch) {
+        const reported = await reportPost(
+          env,
+          decodeURIComponent(reportMatch[1]),
+        );
+        if (!reported) {
+          return errorResponse("Post not found", 404, corsHeaders);
+        }
+        return jsonResponse(reported, 200, corsHeaders);
       }
 
       const postMatch = pathname.match(/^\/posts\/([^/]+)$/);

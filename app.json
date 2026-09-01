@@ -38,6 +38,14 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "AIhance saves the reference image so you can upload it to ChatGPT.",
+          "savePhotosPermission": "AIhance saves the reference image so you can upload it to ChatGPT.",
+          "granularPermissions": ["photo"]
+        }
       ]
     ],
     "experiments": {

@@ -22,9 +22,26 @@ bun run api:dev    # start the Worker
 
 - `GET /tags` — curated Tag list
 - `GET /posts` — Post summaries for the Feed
+- `GET /posts?admin=1` — admin list with prompt preview and report count (requires auth)
 - `GET /posts/:id` — Post detail
 - `GET /images/:key` — image proxy from R2
 - `POST /posts` — create a Post (multipart form upload)
+- `DELETE /posts/:id` — delete a Post and its image
+- `POST /admin/login` — password login, returns Bearer token
+- `GET /admin` — password-protected admin web page
+
+## Admin
+
+Set both secrets in Wrangler (or `.dev.vars` locally):
+
+```
+ADMIN_TOKEN=your-bearer-token
+ADMIN_PASSWORD=your-login-password
+```
+
+Open `http://localhost:8787/admin`, log in with the password, then create or delete Posts.
+
+For local dev without auth, leave `ADMIN_TOKEN` unset to allow unauthenticated uploads.
 
 ## Create a Post
 
@@ -48,7 +65,20 @@ If `ADMIN_TOKEN` is set in Wrangler, send:
 -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
-For local dev, leave `ADMIN_TOKEN` unset to allow unauthenticated uploads.
+## Delete a Post
+
+```bash
+curl -X DELETE http://localhost:8787/posts/<post-id> \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+## Admin login
+
+```bash
+curl -X POST http://localhost:8787/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"password":"your-login-password"}'
+```
 
 ## Mobile app config
 

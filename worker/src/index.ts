@@ -1,7 +1,10 @@
+import { adminPageHtml } from "./admin-page";
+
 export interface Env {
   DB: D1Database;
   IMAGES: R2Bucket;
   ADMIN_TOKEN?: string;
+  ADMIN_PASSWORD?: string;
 }
 
 export interface TagRow {
@@ -25,6 +28,11 @@ export interface PostSummary {
 
 export interface PostDetail extends PostSummary {
   prompt: string | null;
+}
+
+export interface AdminPostSummary extends PostSummary {
+  prompt: string | null;
+  reportCount: number;
 }
 
 const IMAGE_EXTENSIONS: Record<string, string> = {
@@ -139,6 +147,30 @@ async function listTags(db: D1Database) {
   return (results ?? []).map((tag) => ({
     slug: tag.slug,
     displayName: tag.display_name,
+  }));
+}
+
+async function listPostsAdmin(
+  baseUrl: string,
+  env: Env,
+): Promise<AdminPostSummary[]> {
+  const { results } = await env.DB.prepare(
+    "SELECT id, image_key, prompt, created_at, report_count FROM posts ORDER BY created_at DESC",
+  ).all<PostRow & { report_count: number }>();
+
+  const posts = results ?? [];
+  const tagMap = await getTagSlugsForPosts(
+    env.DB,
+    posts.map((post) => post.id),
+  );
+
+  return posts.map((post) => ({
+    id: post.id,
+    imageUrl: imageUrl(baseUrl, post.image_key),
+    prompt: post.prompt,
+    tagSlugs: tagMap.get(post.id) ?? [],
+    createdAt: post.created_at,
+    reportCount: post.report_count,
   }));
 }
 
@@ -291,6 +323,45 @@ async function createPost(
   return jsonResponse(post, 201);
 }
 
+async function deletePost(env: Env, id: string): Promise<boolean> {
+  const post = await env.DB.prepare(
+    "SELECT image_key FROM posts WHERE id = ?1",
+  )
+    .bind(id)
+    .first<{ image_key: string }>();
+
+  if (!post) {
+    return false;
+  }
+
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM post_tags WHERE post_id = ?1").bind(id),
+    env.DB.prepare("DELETE FROM posts WHERE id = ?1").bind(id),
+  ]);
+
+  await env.IMAGES.delete(post.image_key);
+  return true;
+}
+
+async function adminLogin(request: Request, env: Env): Promise<Response> {
+  if (!env.ADMIN_PASSWORD || !env.ADMIN_TOKEN) {
+    return errorResponse("Admin login not configured", 503);
+  }
+
+  let body: { password?: string };
+  try {
+    body = (await request.json()) as { password?: string };
+  } catch {
+    return errorResponse("Invalid JSON body", 400);
+  }
+
+  if (body.password !== env.ADMIN_PASSWORD) {
+    return errorResponse("Invalid password", 401);
+  }
+
+  return jsonResponse({ token: env.ADMIN_TOKEN });
+}
+
 async function reportPost(
   env: Env,
   id: string,
@@ -344,7 +415,33 @@ export default {
         return jsonResponse(tags, 200, corsHeaders);
       }
 
+      if (request.method === "GET" && pathname === "/admin") {
+        return new Response(adminPageHtml(), {
+          headers: {
+            "content-type": "text/html; charset=utf-8",
+            ...corsHeaders,
+          },
+        });
+      }
+
+      if (request.method === "POST" && pathname === "/admin/login") {
+        const response = await adminLogin(request, env);
+        for (const [key, value] of Object.entries(corsHeaders)) {
+          response.headers.set(key, value);
+        }
+        return response;
+      }
+
       if (request.method === "GET" && pathname === "/posts") {
+        if (url.searchParams.get("admin") === "1") {
+          if (!isAuthorized(request, env)) {
+            return errorResponse("Unauthorized", 401, corsHeaders);
+          }
+
+          const posts = await listPostsAdmin(baseUrl, env);
+          return jsonResponse(posts, 200, corsHeaders);
+        }
+
         const tagSlug = url.searchParams.get("tag")?.trim() || undefined;
         const posts = await listPosts(baseUrl, env, tagSlug);
         return jsonResponse(posts, 200, corsHeaders);
@@ -375,12 +472,29 @@ export default {
       }
 
       const postMatch = pathname.match(/^\/posts\/([^/]+)$/);
-      if (request.method === "GET" && postMatch) {
-        const post = await getPost(baseUrl, env, decodeURIComponent(postMatch[1]));
-        if (!post) {
-          return errorResponse("Post not found", 404, corsHeaders);
+      if (postMatch) {
+        const postId = decodeURIComponent(postMatch[1]);
+
+        if (request.method === "GET") {
+          const post = await getPost(baseUrl, env, postId);
+          if (!post) {
+            return errorResponse("Post not found", 404, corsHeaders);
+          }
+          return jsonResponse(post, 200, corsHeaders);
         }
-        return jsonResponse(post, 200, corsHeaders);
+
+        if (request.method === "DELETE") {
+          if (!isAuthorized(request, env)) {
+            return errorResponse("Unauthorized", 401, corsHeaders);
+          }
+
+          const deleted = await deletePost(env, postId);
+          if (!deleted) {
+            return errorResponse("Post not found", 404, corsHeaders);
+          }
+
+          return new Response(null, { status: 204, headers: corsHeaders });
+        }
       }
 
       const imageMatch = pathname.match(/^\/images\/(.+)$/);

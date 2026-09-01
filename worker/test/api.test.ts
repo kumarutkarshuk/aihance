@@ -3,13 +3,32 @@ import { describe, expect, it, beforeEach } from "vitest";
 import worker from "../src/index";
 
 const TEST_BASE_URL = "http://example.com";
+const TEST_ADMIN_TOKEN = "test-admin-token";
+const TEST_ADMIN_PASSWORD = "secret-password";
 
-async function request(path: string, init?: RequestInit) {
+type TestEnv = typeof env & {
+  ADMIN_TOKEN?: string;
+  ADMIN_PASSWORD?: string;
+};
+
+function authEnv(): TestEnv {
+  return { ...env, ADMIN_TOKEN: TEST_ADMIN_TOKEN, ADMIN_PASSWORD: TEST_ADMIN_PASSWORD };
+}
+
+async function request(
+  path: string,
+  init?: RequestInit,
+  testEnv: TestEnv = env,
+) {
   const request = new Request(`${TEST_BASE_URL}${path}`, init);
   const ctx = createExecutionContext();
-  const response = await worker.fetch(request, env, ctx);
+  const response = await worker.fetch(request, testEnv, ctx);
   await waitOnExecutionContext(ctx);
   return response;
+}
+
+function bearerHeaders(token = TEST_ADMIN_TOKEN): HeadersInit {
+  return { Authorization: `Bearer ${token}` };
 }
 
 async function applySchema() {
@@ -280,6 +299,159 @@ describe("POST /posts/:id/report", () => {
 
     const detailResponse = await request("/posts/post-001");
     expect(detailResponse.status).toBe(200);
+  });
+});
+
+describe("admin auth", () => {
+  it("rejects POST /posts without Bearer token when ADMIN_TOKEN is set", async () => {
+    const formData = new FormData();
+    formData.append(
+      "image",
+      new File([new Uint8Array([255, 216, 255, 217])], "style.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+    formData.append("tagSlugs", "anime");
+
+    const response = await request(
+      "/posts",
+      { method: "POST", body: formData },
+      authEnv(),
+    );
+    expect(response.status).toBe(401);
+  });
+
+  it("allows POST /posts with valid Bearer token", async () => {
+    const formData = new FormData();
+    formData.append(
+      "image",
+      new File([new Uint8Array([255, 216, 255, 217])], "style.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+    formData.append("tagSlugs", "anime");
+
+    const response = await request(
+      "/posts",
+      {
+        method: "POST",
+        body: formData,
+        headers: bearerHeaders(),
+      },
+      authEnv(),
+    );
+    expect(response.status).toBe(201);
+  });
+
+  it("rejects DELETE /posts/:id without Bearer token", async () => {
+    const response = await request(
+      "/posts/post-001",
+      { method: "DELETE" },
+      authEnv(),
+    );
+    expect(response.status).toBe(401);
+  });
+
+  it("rejects GET /posts?admin=1 without Bearer token", async () => {
+    const response = await request("/posts?admin=1", undefined, authEnv());
+    expect(response.status).toBe(401);
+  });
+});
+
+describe("POST /admin/login", () => {
+  it("returns a token for the correct password", async () => {
+    const response = await request(
+      "/admin/login",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password: TEST_ADMIN_PASSWORD }),
+      },
+      authEnv(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ token: TEST_ADMIN_TOKEN });
+  });
+
+  it("rejects an incorrect password", async () => {
+    const response = await request(
+      "/admin/login",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password: "wrong" }),
+      },
+      authEnv(),
+    );
+
+    expect(response.status).toBe(401);
+  });
+});
+
+describe("GET /posts?admin=1", () => {
+  it("returns posts with prompt preview and report count", async () => {
+    await env.DB.prepare(
+      "UPDATE posts SET report_count = ?1 WHERE id = ?2",
+    )
+      .bind(3, "post-001")
+      .run();
+
+    const response = await request(
+      "/posts?admin=1",
+      { headers: bearerHeaders() },
+      authEnv(),
+    );
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as Array<Record<string, unknown>>;
+    expect(body).toHaveLength(2);
+    expect(body[0]).toMatchObject({
+      id: "post-001",
+      prompt: "Soft anime portrait",
+      reportCount: 3,
+      tagSlugs: ["anime"],
+    });
+    expect(body[1]).toMatchObject({
+      id: "post-002",
+      prompt: null,
+      reportCount: 0,
+    });
+  });
+});
+
+describe("DELETE /posts/:id", () => {
+  it("removes the post from D1 and R2", async () => {
+    const imageBytes = new Uint8Array([255, 216, 255, 217]);
+    await env.IMAGES.put("post-001.jpg", imageBytes, {
+      httpMetadata: { contentType: "image/jpeg" },
+    });
+
+    const response = await request(
+      "/posts/post-001",
+      { method: "DELETE", headers: bearerHeaders() },
+      authEnv(),
+    );
+    expect(response.status).toBe(204);
+
+    const feedResponse = await request("/posts");
+    const posts = (await feedResponse.json()) as Array<{ id: string }>;
+    expect(posts.some((post) => post.id === "post-001")).toBe(false);
+
+    const detailResponse = await request("/posts/post-001");
+    expect(detailResponse.status).toBe(404);
+
+    const imageResponse = await request("/images/post-001.jpg");
+    expect(imageResponse.status).toBe(404);
+  });
+
+  it("returns 404 for an unknown post", async () => {
+    const response = await request(
+      "/posts/missing",
+      { method: "DELETE", headers: bearerHeaders() },
+      authEnv(),
+    );
+    expect(response.status).toBe(404);
   });
 });
 

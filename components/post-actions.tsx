@@ -7,6 +7,7 @@ import {
   hasReportedPost,
   markReportedPost,
 } from "@/lib/reporting";
+import { colors, fonts } from "@/lib/theme";
 
 interface PostActionsProps {
   postId: string;
@@ -130,17 +131,18 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sectionLabel: {
+    fontFamily: fonts.bodySemiBold,
     fontSize: 16,
-    fontWeight: "600",
-    color: "#111",
+    color: colors.foreground,
   },
   hint: {
+    fontFamily: fonts.body,
     fontSize: 14,
-    color: "#666",
+    color: colors.muted,
     lineHeight: 20,
   },
   button: {
-    backgroundColor: "#111",
+    backgroundColor: colors.foreground,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -150,9 +152,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonLabel: {
-    color: "#fff",
+    fontFamily: fonts.bodySemiBold,
+    color: colors.background,
     fontSize: 16,
-    fontWeight: "600",
   },
   reportButton: {
     borderRadius: 8,
@@ -160,18 +162,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.surfaceBorder,
+    backgroundColor: colors.surface,
   },
   reportLabel: {
-    color: "#a33",
+    fontFamily: fonts.bodySemiBold,
+    color: colors.destructive,
     fontSize: 16,
-    fontWeight: "600",
   },
   reportedButton: {
-    borderColor: "#ddd",
-    backgroundColor: "#fafafa",
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.surface,
   },
   reportedLabel: {
-    color: "#888",
+    fontFamily: fonts.bodySemiBold,
+    color: colors.destructiveMuted,
   },
 });

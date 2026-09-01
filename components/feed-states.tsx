@@ -1,4 +1,7 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { GradientPill } from "@/components/ui/gradient-pill";
+import { PlainBorderPill } from "@/components/ui/plain-border-pill";
+import { colors, fonts } from "@/lib/theme";
 
 interface FeedErrorStateProps {
   title?: string;
@@ -9,7 +12,7 @@ interface FeedErrorStateProps {
 export function FeedLoadingState() {
   return (
     <View style={styles.centered}>
-      <ActivityIndicator size="large" />
+      <ActivityIndicator size="large" color={colors.foreground} />
       <Text style={styles.message}>Loading Feed…</Text>
     </View>
   );
@@ -24,9 +27,7 @@ export function FeedErrorState({
     <View style={styles.centered}>
       <Text style={styles.errorTitle}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
-      <Pressable style={styles.button} onPress={onRetry}>
-        <Text style={styles.buttonLabel}>Retry</Text>
-      </Pressable>
+      <GradientPill label="Retry" onPress={onRetry} />
     </View>
   );
 }
@@ -53,9 +54,7 @@ export function FeedEmptyState({
           : "Pull down to refresh, or check back soon for new styles."}
       </Text>
       {filtered && onClearFilter ? (
-        <Pressable style={styles.button} onPress={onClearFilter}>
-          <Text style={styles.buttonLabel}>Clear filter</Text>
-        </Pressable>
+        <PlainBorderPill label="Clear filter" onPress={onClearFilter} />
       ) : null}
     </View>
   );
@@ -68,27 +67,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
     gap: 12,
+    backgroundColor: colors.background,
   },
   message: {
+    fontFamily: fonts.body,
     fontSize: 16,
-    color: "#555",
+    color: colors.muted,
     textAlign: "center",
   },
   errorTitle: {
+    fontFamily: fonts.bodySemiBold,
     fontSize: 20,
-    fontWeight: "600",
-    color: "#111",
-  },
-  button: {
-    marginTop: 8,
-    backgroundColor: "#111",
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  buttonLabel: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+    color: colors.foreground,
   },
 });

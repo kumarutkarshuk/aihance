@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import type { PostSummary } from "@/lib/feed-api";
+import { colors } from "@/lib/theme";
 
 interface FeedGridProps {
   posts: PostSummary[];
@@ -37,7 +38,12 @@ export function FeedGrid({
       columnWrapperStyle={posts.length > 0 ? styles.row : undefined}
       ListEmptyComponent={emptyComponent}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.foreground}
+          colors={[colors.foreground]}
+        />
       }
       renderItem={({ item }) => (
         <Pressable
@@ -76,7 +82,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: "#eee",
+    backgroundColor: colors.placeholder,
   },
   thumbnail: {
     width: "100%",

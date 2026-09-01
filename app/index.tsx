@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { colors, fonts } from "@/lib/theme";
 import { Href, router, useLocalSearchParams } from "expo-router";
 import { FeedGrid } from "@/components/feed-grid";
 import {
@@ -162,25 +163,26 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
   },
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    backgroundColor: "#fdecea",
+    backgroundColor: colors.errorBannerBackground,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   errorBannerText: {
     flex: 1,
-    color: "#611a15",
+    color: colors.errorBannerText,
+    fontFamily: fonts.body,
     fontSize: 14,
   },
   errorBannerAction: {
-    color: "#111",
+    color: colors.foreground,
+    fontFamily: fonts.bodySemiBold,
     fontSize: 14,
-    fontWeight: "600",
   },
 });

@@ -6,6 +6,7 @@ import {
   View,
 } from "react-native";
 import type { Tag } from "@/lib/feed-api";
+import { colors, fonts } from "@/lib/theme";
 
 interface TagFilterBarProps {
   tags: Tag[];
@@ -64,8 +65,8 @@ export function TagFilterBar({
 const styles = StyleSheet.create({
   container: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ddd",
-    backgroundColor: "#fff",
+    borderBottomColor: colors.glassBorder,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingHorizontal: 12,
@@ -75,32 +76,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   chip: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colors.surface,
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
   chipSelected: {
-    backgroundColor: "#111",
+    backgroundColor: colors.foreground,
+    borderColor: colors.foreground,
   },
   chipText: {
+    fontFamily: fonts.bodyMedium,
     fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
+    color: colors.foreground,
   },
   chipTextSelected: {
-    color: "#fff",
+    color: colors.background,
   },
   clearChip: {
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.surfaceBorder,
   },
   clearChipText: {
+    fontFamily: fonts.bodyMedium,
     fontSize: 14,
-    color: "#555",
-    fontWeight: "500",
+    color: colors.muted,
   },
 });

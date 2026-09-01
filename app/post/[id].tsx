@@ -12,6 +12,7 @@ import { Image } from "expo-image";
 import { FeedErrorState } from "@/components/feed-states";
 import { PostActions } from "@/components/post-actions";
 import { fetchPost, fetchTags, type PostDetail, type Tag } from "@/lib/feed-api";
+import { colors, fonts } from "@/lib/theme";
 
 function formatPublishedDate(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString(undefined, {
@@ -72,7 +73,7 @@ export default function PostDetailScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.foreground} />
       </View>
     );
   }
@@ -141,22 +142,25 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: 32,
+    backgroundColor: colors.background,
   },
   image: {
     width: "100%",
     minHeight: 280,
-    backgroundColor: "#eee",
+    backgroundColor: colors.placeholder,
   },
   meta: {
     padding: 16,
     gap: 16,
   },
   date: {
+    fontFamily: fonts.body,
     fontSize: 14,
-    color: "#666",
+    color: colors.muted,
   },
   tagRow: {
     flexDirection: "row",
@@ -164,31 +168,36 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tagChip: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colors.surface,
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   tagText: {
+    fontFamily: fonts.bodyMedium,
     fontSize: 14,
-    color: "#333",
+    color: colors.foreground,
   },
   promptSection: {
     gap: 8,
   },
   sectionLabel: {
+    fontFamily: fonts.bodySemiBold,
     fontSize: 16,
-    fontWeight: "600",
-    color: "#111",
+    color: colors.foreground,
   },
   prompt: {
+    fontFamily: fonts.body,
     fontSize: 16,
     lineHeight: 24,
-    color: "#222",
+    color: colors.foreground,
   },
   noPrompt: {
+    fontFamily: fonts.body,
     fontSize: 15,
-    color: "#777",
+    color: colors.muted,
     fontStyle: "italic",
   },
 });

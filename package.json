@@ -8,7 +8,11 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "api:dev": "cd worker && bun run dev",
+    "api:test": "cd worker && bun run test",
+    "api:seed": "cd worker && bash scripts/seed-dev.sh"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

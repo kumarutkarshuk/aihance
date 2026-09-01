@@ -1,13 +1,8 @@
 import * as Clipboard from "expo-clipboard";
-import { File, Paths } from "expo-file-system";
-import * as Linking from "expo-linking";
+import { File as ExpoFile, Paths } from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 
 export type SaveImageResult = "saved" | "permission-denied";
-
-export async function copyPrompt(prompt: string): Promise<void> {
-  await Clipboard.setStringAsync(prompt);
-}
 
 function fileNameFromImageUrl(imageUrl: string, postId: string): string {
   try {
@@ -22,6 +17,20 @@ function fileNameFromImageUrl(imageUrl: string, postId: string): string {
   return `${postId}.jpg`;
 }
 
+async function downloadReferenceImage(imageUrl: string, postId: string) {
+  const destination = new ExpoFile(
+    Paths.cache,
+    fileNameFromImageUrl(imageUrl, postId),
+  );
+  return ExpoFile.downloadFileAsync(imageUrl, destination, {
+    idempotent: true,
+  });
+}
+
+export async function copyPrompt(prompt: string): Promise<void> {
+  await Clipboard.setStringAsync(prompt);
+}
+
 export async function saveReferenceImage(
   imageUrl: string,
   postId: string,
@@ -31,25 +40,7 @@ export async function saveReferenceImage(
     return "permission-denied";
   }
 
-  const destination = new File(
-    Paths.cache,
-    fileNameFromImageUrl(imageUrl, postId),
-  );
-  const downloaded = await File.downloadFileAsync(imageUrl, destination, {
-    idempotent: true,
-  });
+  const downloaded = await downloadReferenceImage(imageUrl, postId);
   await MediaLibrary.saveToLibraryAsync(downloaded.uri);
   return "saved";
-}
-
-function chatGptHandoffUrl(prompt: string | null): string {
-  if (prompt && prompt.trim().length > 0) {
-    return `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
-  }
-
-  return "https://chatgpt.com/";
-}
-
-export async function openChatGPT(prompt: string | null): Promise<void> {
-  await Linking.openURL(chatGptHandoffUrl(prompt));
 }

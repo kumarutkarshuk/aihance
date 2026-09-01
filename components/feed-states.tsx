@@ -31,6 +31,36 @@ export function FeedErrorState({
   );
 }
 
+interface FeedEmptyStateProps {
+  tagDisplayName?: string;
+  onClearFilter?: () => void;
+}
+
+export function FeedEmptyState({
+  tagDisplayName,
+  onClearFilter,
+}: FeedEmptyStateProps) {
+  const filtered = Boolean(tagDisplayName);
+
+  return (
+    <View style={styles.centered}>
+      <Text style={styles.errorTitle}>
+        {filtered ? `No Posts for ${tagDisplayName}` : "No Posts yet"}
+      </Text>
+      <Text style={styles.message}>
+        {filtered
+          ? "Try another Tag or clear the filter to browse the full Feed."
+          : "Pull down to refresh, or check back soon for new styles."}
+      </Text>
+      {filtered && onClearFilter ? (
+        <Pressable style={styles.button} onPress={onClearFilter}>
+          <Text style={styles.buttonLabel}>Clear filter</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   centered: {
     flex: 1,

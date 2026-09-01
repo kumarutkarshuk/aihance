@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Href, router, useLocalSearchParams } from "expo-router";
 import { FeedGrid } from "@/components/feed-grid";
-import { FeedErrorState, FeedLoadingState } from "@/components/feed-states";
+import {
+  FeedEmptyState,
+  FeedErrorState,
+  FeedLoadingState,
+} from "@/components/feed-states";
 import { TagFilterBar } from "@/components/tag-filter-bar";
 import {
   fetchPosts,
@@ -80,6 +84,13 @@ export default function FeedScreen() {
     router.setParams({ tag: "" });
   }, []);
 
+  const selectedTagDisplayName = useMemo(() => {
+    if (!selectedTagSlug) {
+      return undefined;
+    }
+    return tags.find((tag) => tag.slug === selectedTagSlug)?.displayName;
+  }, [selectedTagSlug, tags]);
+
   if (loading && posts.length === 0) {
     return (
       <View style={styles.container}>
@@ -134,6 +145,14 @@ export default function FeedScreen() {
         onRefresh={() => void loadFeed(true)}
         onPressPost={(postId) =>
           router.push(`/post/${postId}` as Href)
+        }
+        emptyComponent={
+          <FeedEmptyState
+            tagDisplayName={selectedTagDisplayName}
+            onClearFilter={
+              selectedTagSlug ? () => handleSelectTag(undefined) : undefined
+            }
+          />
         }
       />
     </View>

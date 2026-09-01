@@ -1,5 +1,11 @@
 import { Image } from "expo-image";
-import { FlatList, Pressable, RefreshControl, StyleSheet } from "react-native";
+import type { ReactElement } from "react";
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+} from "react-native";
 import type { PostSummary } from "@/lib/feed-api";
 
 interface FeedGridProps {
@@ -7,6 +13,7 @@ interface FeedGridProps {
   refreshing: boolean;
   onRefresh: () => void;
   onPressPost: (postId: string) => void;
+  emptyComponent?: ReactElement;
 }
 
 const NUM_COLUMNS = 2;
@@ -16,14 +23,19 @@ export function FeedGrid({
   refreshing,
   onRefresh,
   onPressPost,
+  emptyComponent,
 }: FeedGridProps) {
   return (
     <FlatList
       data={posts}
       keyExtractor={(item) => item.id}
       numColumns={NUM_COLUMNS}
-      contentContainerStyle={styles.listContent}
-      columnWrapperStyle={styles.row}
+      contentContainerStyle={[
+        styles.listContent,
+        posts.length === 0 && styles.listContentEmpty,
+      ]}
+      columnWrapperStyle={posts.length > 0 ? styles.row : undefined}
+      ListEmptyComponent={emptyComponent}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
@@ -52,6 +64,9 @@ const styles = StyleSheet.create({
   listContent: {
     padding: GAP,
     gap: GAP,
+  },
+  listContentEmpty: {
+    flexGrow: 1,
   },
   row: {
     gap: GAP,

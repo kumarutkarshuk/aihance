@@ -1,11 +1,7 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { reportPost } from "@/lib/feed-api";
-import {
-  copyPrompt,
-  openChatGPT,
-  saveReferenceImage,
-} from "@/lib/handoff";
+import { copyPrompt, saveReferenceImage } from "@/lib/handoff";
 
 interface PostActionsProps {
   postId: string;
@@ -13,27 +9,23 @@ interface PostActionsProps {
   imageUrl: string;
 }
 
-type Notice = {
-  kind: "success" | "error";
-  message: string;
-};
-
 export function PostActions({ postId, prompt, imageUrl }: PostActionsProps) {
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<Notice | null>(null);
 
   const runAction = useCallback(
-    async (action: () => Promise<Notice>, fallbackError: string) => {
+    async (action: () => Promise<string | void>, fallbackError: string) => {
       if (busy) {
         return;
       }
 
       setBusy(true);
-      setNotice(null);
       try {
-        setNotice(await action());
+        const successTitle = await action();
+        if (successTitle) {
+          Alert.alert(successTitle);
+        }
       } catch {
-        setNotice({ kind: "error", message: fallbackError });
+        Alert.alert(fallbackError);
       } finally {
         setBusy(false);
       }
@@ -48,7 +40,7 @@ export function PostActions({ postId, prompt, imageUrl }: PostActionsProps) {
 
     void runAction(async () => {
       await copyPrompt(prompt);
-      return { kind: "success", message: "Prompt copied." };
+      return "Copied";
     }, "Could not copy Prompt. Try again.");
   };
 
@@ -56,38 +48,26 @@ export function PostActions({ postId, prompt, imageUrl }: PostActionsProps) {
     void runAction(async () => {
       const result = await saveReferenceImage(imageUrl, postId);
       if (result === "permission-denied") {
-        return {
-          kind: "error",
-          message: "Photo access is needed to save the image.",
-        };
+        Alert.alert("Allow photo access to save this image.");
+        return;
       }
 
-      return { kind: "success", message: "Image saved to your photos." };
+      return "Saved";
     }, "Could not save the image. Try again.");
-  };
-
-  const onOpenChatGPT = () => {
-    void runAction(async () => {
-      await openChatGPT(prompt);
-      return { kind: "success", message: "Opening ChatGPT." };
-    }, "Could not open ChatGPT.");
   };
 
   const onReport = () => {
     void runAction(async () => {
       await reportPost(postId);
-      return {
-        kind: "success",
-        message: "Report submitted. This Post stays in the Feed.",
-      };
-    }, "Could not submit Report. Try again.");
+      return "Report sent";
+    }, "Could not send Report. Try again.");
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.sectionLabel}>Handoff</Text>
       <Text style={styles.hint}>
-        Copy the Prompt, save the image, then Restyle in ChatGPT.
+        Copy the Prompt and save the image, then Restyle in ChatGPT.
       </Text>
 
       {prompt ? (
@@ -115,16 +95,6 @@ export function PostActions({ postId, prompt, imageUrl }: PostActionsProps) {
       ) : null}
 
       <Pressable
-        style={[styles.button, busy && styles.buttonDisabled]}
-        onPress={onOpenChatGPT}
-        disabled={busy}
-        accessibilityRole="button"
-        accessibilityLabel="Open in ChatGPT"
-      >
-        <Text style={styles.buttonLabel}>Open in ChatGPT</Text>
-      </Pressable>
-
-      <Pressable
         style={[styles.reportButton, busy && styles.buttonDisabled]}
         onPress={onReport}
         disabled={busy}
@@ -133,19 +103,6 @@ export function PostActions({ postId, prompt, imageUrl }: PostActionsProps) {
       >
         <Text style={styles.reportLabel}>Report</Text>
       </Pressable>
-
-      {busy ? <ActivityIndicator /> : null}
-
-      {notice ? (
-        <Text
-          style={
-            notice.kind === "error" ? styles.errorNotice : styles.successNotice
-          }
-          accessibilityLiveRegion="polite"
-        >
-          {notice.message}
-        </Text>
-      ) : null}
     </View>
   );
 }
@@ -191,13 +148,5 @@ const styles = StyleSheet.create({
     color: "#a33",
     fontSize: 16,
     fontWeight: "600",
-  },
-  successNotice: {
-    fontSize: 14,
-    color: "#1a7f37",
-  },
-  errorNotice: {
-    fontSize: 14,
-    color: "#a33",
   },
 });

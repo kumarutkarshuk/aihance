@@ -32,6 +32,10 @@ yarn-error.*
 
 # local env files
 .env*.local
+.dev.vars
+
+# Wrangler local state (D1/R2 dev databases)
+worker/.wrangler/
 
 # typescript
 *.tsbuildinfo

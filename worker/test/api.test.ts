@@ -129,6 +129,94 @@ describe("GET /posts/:id", () => {
   });
 });
 
+describe("POST /posts", () => {
+  it("creates a post with image, prompt, and tags", async () => {
+    const imageBytes = new Uint8Array([255, 216, 255, 217]);
+    const formData = new FormData();
+    formData.append(
+      "image",
+      new File([imageBytes], "style.jpg", { type: "image/jpeg" }),
+    );
+    formData.append("prompt", "Neon cityscape at night");
+    formData.append("tagSlugs", "anime");
+    formData.append("tagSlugs", "watercolor");
+
+    const response = await request("/posts", {
+      method: "POST",
+      body: formData,
+    });
+
+    expect(response.status).toBe(201);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.prompt).toBe("Neon cityscape at night");
+    expect(body.tagSlugs).toEqual(["anime", "watercolor"]);
+    expect(typeof body.id).toBe("string");
+    expect(typeof body.imageUrl).toBe("string");
+    expect(typeof body.createdAt).toBe("string");
+
+    const listResponse = await request("/posts");
+    const posts = (await listResponse.json()) as Array<{ id: string }>;
+    expect(posts.some((post) => post.id === body.id)).toBe(true);
+
+    const imageKey = decodeURIComponent(
+      (body.imageUrl as string).split("/images/")[1],
+    );
+    const imageResponse = await request(`/images/${imageKey}`);
+    expect(imageResponse.status).toBe(200);
+    expect(new Uint8Array(await imageResponse.arrayBuffer())).toEqual(imageBytes);
+  });
+
+  it("creates a post without a prompt", async () => {
+    const formData = new FormData();
+    formData.append(
+      "image",
+      new File([new Uint8Array([255, 216, 255, 217])], "style.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+    formData.append("tagSlugs", "watercolor");
+
+    const response = await request("/posts", {
+      method: "POST",
+      body: formData,
+    });
+
+    expect(response.status).toBe(201);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.prompt).toBeNull();
+  });
+
+  it("rejects requests without an image", async () => {
+    const formData = new FormData();
+    formData.append("tagSlugs", "anime");
+
+    const response = await request("/posts", {
+      method: "POST",
+      body: formData,
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects unknown tag slugs", async () => {
+    const formData = new FormData();
+    formData.append(
+      "image",
+      new File([new Uint8Array([255, 216, 255, 217])], "style.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+    formData.append("tagSlugs", "not-a-tag");
+
+    const response = await request("/posts", {
+      method: "POST",
+      body: formData,
+    });
+
+    expect(response.status).toBe(400);
+  });
+});
+
 describe("GET /images/:key", () => {
   it("returns image bytes from R2", async () => {
     const imageBytes = new Uint8Array([137, 80, 78, 71]);

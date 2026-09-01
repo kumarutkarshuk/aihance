@@ -1,6 +1,7 @@
 export interface Env {
   DB: D1Database;
   IMAGES: R2Bucket;
+  ADMIN_TOKEN?: string;
 }
 
 export interface TagRow {
@@ -26,6 +27,12 @@ export interface PostDetail extends PostSummary {
   prompt: string | null;
 }
 
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 function imageUrl(baseUrl: string, imageKey: string): string {
   return `${baseUrl.replace(/\/$/, "")}/images/${encodeURIComponent(imageKey)}`;
 }
@@ -48,6 +55,50 @@ function errorResponse(
   extraHeaders: Record<string, string> = {},
 ): Response {
   return jsonResponse({ error: message }, status, extraHeaders);
+}
+
+function isAuthorized(request: Request, env: Env): boolean {
+  if (!env.ADMIN_TOKEN) {
+    return true;
+  }
+
+  const authorization = request.headers.get("Authorization");
+  return authorization === `Bearer ${env.ADMIN_TOKEN}`;
+}
+
+function parseTagSlugs(formData: FormData): string[] {
+  const tagSlugs = formData
+    .getAll("tagSlugs")
+    .flatMap((value) => {
+      if (typeof value !== "string") {
+        return [];
+      }
+
+      return value
+        .split(",")
+        .map((slug) => slug.trim())
+        .filter(Boolean);
+    });
+
+  return [...new Set(tagSlugs)];
+}
+
+function imageExtension(contentType: string, filename: string): string | null {
+  const fromType = IMAGE_EXTENSIONS[contentType.toLowerCase()];
+  if (fromType) {
+    return fromType;
+  }
+
+  const match = filename.toLowerCase().match(/\.(jpe?g|png|webp)$/);
+  if (!match) {
+    return null;
+  }
+
+  if (match[1] === "jpeg" || match[1] === "jpg") {
+    return "jpg";
+  }
+
+  return match[1];
 }
 
 async function getTagSlugsForPosts(
@@ -136,6 +187,91 @@ async function getPost(
   };
 }
 
+async function validateTagSlugs(
+  db: D1Database,
+  tagSlugs: string[],
+): Promise<string | null> {
+  if (tagSlugs.length === 0) {
+    return "At least one tag slug is required";
+  }
+
+  const placeholders = tagSlugs.map((_, index) => `?${index + 1}`).join(", ");
+  const { results } = await db
+    .prepare(`SELECT slug FROM tags WHERE slug IN (${placeholders})`)
+    .bind(...tagSlugs)
+    .all<{ slug: string }>();
+
+  const knownSlugs = new Set((results ?? []).map((row) => row.slug));
+  const unknownSlugs = tagSlugs.filter((slug) => !knownSlugs.has(slug));
+
+  if (unknownSlugs.length > 0) {
+    return `Unknown tag slugs: ${unknownSlugs.join(", ")}`;
+  }
+
+  return null;
+}
+
+async function createPost(
+  baseUrl: string,
+  env: Env,
+  request: Request,
+): Promise<Response> {
+  const formData = await request.formData();
+  const imageField = formData.get("image");
+  const promptField = formData.get("prompt");
+  const tagSlugs = parseTagSlugs(formData);
+
+  if (!(imageField instanceof File)) {
+    return errorResponse("Image file is required", 400);
+  }
+
+  if (!imageField.type.startsWith("image/")) {
+    return errorResponse("Image must be an image file", 400);
+  }
+
+  const extension = imageExtension(imageField.type, imageField.name);
+  if (!extension) {
+    return errorResponse("Unsupported image type", 400);
+  }
+
+  const tagError = await validateTagSlugs(env.DB, tagSlugs);
+  if (tagError) {
+    return errorResponse(tagError, 400);
+  }
+
+  const prompt =
+    typeof promptField === "string" && promptField.trim().length > 0
+      ? promptField.trim()
+      : null;
+  const postId = crypto.randomUUID();
+  const imageKey = `${postId}.${extension}`;
+  const createdAt = new Date().toISOString();
+
+  await env.IMAGES.put(imageKey, imageField.stream(), {
+    httpMetadata: {
+      contentType: imageField.type,
+    },
+  });
+
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO posts (id, image_key, prompt, created_at) VALUES (?1, ?2, ?3, ?4)",
+    ).bind(postId, imageKey, prompt, createdAt),
+    ...tagSlugs.map((tagSlug) =>
+      env.DB.prepare(
+        "INSERT INTO post_tags (post_id, tag_slug) VALUES (?1, ?2)",
+      ).bind(postId, tagSlug),
+    ),
+  ]);
+
+  const post = await getPost(baseUrl, env, postId);
+  if (!post) {
+    return errorResponse("Failed to create post", 500);
+  }
+
+  return jsonResponse(post, 201);
+}
+
 async function serveImage(env: Env, key: string): Promise<Response> {
   const object = await env.IMAGES.get(key);
   if (!object) {
@@ -175,6 +311,18 @@ export default {
       if (request.method === "GET" && pathname === "/posts") {
         const posts = await listPosts(baseUrl, env);
         return jsonResponse(posts, 200, corsHeaders);
+      }
+
+      if (request.method === "POST" && pathname === "/posts") {
+        if (!isAuthorized(request, env)) {
+          return errorResponse("Unauthorized", 401, corsHeaders);
+        }
+
+        const response = await createPost(baseUrl, env, request);
+        for (const [key, value] of Object.entries(corsHeaders)) {
+          response.headers.set(key, value);
+        }
+        return response;
       }
 
       const postMatch = pathname.match(/^\/posts\/([^/]+)$/);

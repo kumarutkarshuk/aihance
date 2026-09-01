@@ -1,16 +1,13 @@
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useLocalSearchParams, router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { FeedErrorState } from "@/components/feed-states";
 import { PostActions } from "@/components/post-actions";
+import { PostDetailBackButton } from "@/components/post-detail-back-button";
+import { PlainBorderPill } from "@/components/ui/plain-border-pill";
 import { fetchPost, fetchTags, type PostDetail, type Tag } from "@/lib/feed-api";
 import { colors, fonts } from "@/lib/theme";
 
@@ -24,6 +21,7 @@ function formatPublishedDate(isoDate: string): string {
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const snapPoints = useMemo(() => ["15%", "50%", "92%"], []);
   const [post, setPost] = useState<PostDetail | null>(null);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,89 +70,110 @@ export default function PostDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
+      <SafeAreaView style={styles.centered} edges={["top"]}>
         <ActivityIndicator size="large" color={colors.foreground} />
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error || !post) {
     return (
-      <FeedErrorState
-        title="Could not load Post"
-        message={error ?? "Post not found"}
-        onRetry={loadPost}
-      />
+      <SafeAreaView style={styles.centered} edges={["top"]}>
+        <FeedErrorState
+          title="Could not load Post"
+          message={error ?? "Post not found"}
+          onRetry={loadPost}
+        />
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <View style={styles.screen}>
       <Image
         source={{ uri: post.imageUrl }}
-        style={styles.image}
+        style={styles.heroImage}
         contentFit="contain"
         transition={200}
       />
 
-      <View style={styles.meta}>
-        <Text style={styles.date}>{formatPublishedDate(post.createdAt)}</Text>
+      <BottomSheet
+        index={1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={false}
+        backgroundStyle={styles.sheetBackground}
+        handleIndicatorStyle={styles.sheetHandle}
+      >
+        <BottomSheetScrollView
+          contentContainerStyle={styles.sheetContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.date}>{formatPublishedDate(post.createdAt)}</Text>
 
-        {tagLabels.length > 0 ? (
-          <View style={styles.tagRow}>
-            {tagLabels.map(({ slug, label }) => (
-              <Pressable
-                key={slug}
-                style={styles.tagChip}
-                onPress={() =>
-                  router.navigate({ pathname: "/", params: { tag: slug } })
-                }
-                accessibilityRole="button"
-                accessibilityLabel={`Filter Feed by ${label}`}
-              >
-                <Text style={styles.tagText}>{label}</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
+          {tagLabels.length > 0 ? (
+            <View style={styles.tagRow}>
+              {tagLabels.map(({ slug, label }) => (
+                <PlainBorderPill
+                  key={slug}
+                  label={label}
+                  onPress={() =>
+                    router.navigate({ pathname: "/", params: { tag: slug } })
+                  }
+                  accessibilityLabel={`Filter Feed by ${label}`}
+                />
+              ))}
+            </View>
+          ) : null}
 
-        {post.prompt ? (
-          <View style={styles.promptSection}>
-            <Text style={styles.sectionLabel}>Prompt</Text>
-            <Text style={styles.prompt}>{post.prompt}</Text>
-          </View>
-        ) : (
-          <Text style={styles.noPrompt}>No prompt for this Post.</Text>
-        )}
+          {post.prompt ? (
+            <View style={styles.promptSection}>
+              <Text style={styles.sectionLabel}>Prompt</Text>
+              <Text style={styles.prompt}>{post.prompt}</Text>
+            </View>
+          ) : (
+            <Text style={styles.noPrompt}>No prompt for this Post.</Text>
+          )}
 
-        <PostActions
-          postId={post.id}
-          prompt={post.prompt}
-          imageUrl={post.imageUrl}
-        />
-      </View>
-    </ScrollView>
+          <PostActions
+            postId={post.id}
+            prompt={post.prompt}
+            imageUrl={post.imageUrl}
+          />
+        </BottomSheetScrollView>
+      </BottomSheet>
+
+      <PostDetailBackButton onPress={() => router.back()} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.background,
   },
-  content: {
-    paddingBottom: 32,
+  heroImage: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.background,
   },
-  image: {
-    width: "100%",
-    minHeight: 280,
-    backgroundColor: colors.placeholder,
+  sheetBackground: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
-  meta: {
-    padding: 16,
+  sheetHandle: {
+    backgroundColor: colors.muted,
+    width: 40,
+  },
+  sheetContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
     gap: 16,
   },
   date: {
@@ -166,19 +185,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-  },
-  tagChip: {
-    backgroundColor: colors.surface,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  tagText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 14,
-    color: colors.foreground,
   },
   promptSection: {
     gap: 8,

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { PlainBorderButton } from "@/components/ui/plain-border-button";
 import { reportPost } from "@/lib/feed-api";
 import { copyPrompt, saveReferenceImage } from "@/lib/handoff";
 import {
@@ -7,7 +9,6 @@ import {
   hasReportedPost,
   markReportedPost,
 } from "@/lib/reporting";
-import { colors, fonts } from "@/lib/theme";
 
 interface PostActionsProps {
   postId: string;
@@ -84,44 +85,33 @@ export function PostActions({ postId, prompt, imageUrl }: PostActionsProps) {
   return (
     <View style={styles.container}>
       {prompt ? (
-        <Pressable
-          style={[styles.button, busy && styles.buttonDisabled]}
+        <GradientButton
+          label="Copy Prompt"
           onPress={onCopyPrompt}
           disabled={busy}
-          accessibilityRole="button"
           accessibilityLabel="Copy Prompt"
-        >
-          <Text style={styles.buttonLabel}>Copy Prompt</Text>
-        </Pressable>
+        />
       ) : null}
 
       {imageUrl ? (
-        <Pressable
-          style={[styles.button, busy && styles.buttonDisabled]}
+        <GradientButton
+          label="Save image"
           onPress={onSaveImage}
           disabled={busy}
-          accessibilityRole="button"
           accessibilityLabel="Save image"
-        >
-          <Text style={styles.buttonLabel}>Save image</Text>
-        </Pressable>
+        />
       ) : null}
 
-      <Pressable
-        style={[
-          styles.reportButton,
-          (busy || reported) && styles.buttonDisabled,
-          reported && styles.reportedButton,
-        ]}
+      <PlainBorderButton
+        label={reported ? "Reported" : "Report"}
         onPress={onReport}
         disabled={busy || reported}
-        accessibilityRole="button"
-        accessibilityLabel={reported ? "Post already reported" : "Report this Post"}
-      >
-        <Text style={[styles.reportLabel, reported && styles.reportedLabel]}>
-          {reported ? "Reported" : "Report"}
-        </Text>
-      </Pressable>
+        destructive
+        reported={reported}
+        accessibilityLabel={
+          reported ? "Post already reported" : "Report this Post"
+        }
+      />
     </View>
   );
 }
@@ -129,53 +119,5 @@ export function PostActions({ postId, prompt, imageUrl }: PostActionsProps) {
 const styles = StyleSheet.create({
   container: {
     gap: 10,
-  },
-  sectionLabel: {
-    fontFamily: fonts.bodySemiBold,
-    fontSize: 16,
-    color: colors.foreground,
-  },
-  hint: {
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.muted,
-    lineHeight: 20,
-  },
-  button: {
-    backgroundColor: colors.foreground,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonLabel: {
-    fontFamily: fonts.bodySemiBold,
-    color: colors.background,
-    fontSize: 16,
-  },
-  reportButton: {
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    backgroundColor: colors.surface,
-  },
-  reportLabel: {
-    fontFamily: fonts.bodySemiBold,
-    color: colors.destructive,
-    fontSize: 16,
-  },
-  reportedButton: {
-    borderColor: colors.glassBorder,
-    backgroundColor: colors.surface,
-  },
-  reportedLabel: {
-    fontFamily: fonts.bodySemiBold,
-    color: colors.destructiveMuted,
   },
 });

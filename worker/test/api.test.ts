@@ -97,6 +97,39 @@ describe("GET /posts", () => {
       tagSlugs: ["watercolor"],
     });
   });
+
+  it("returns only posts tagged with the requested tag slug", async () => {
+    const response = await request("/posts?tag=anime");
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as Array<{ id: string; tagSlugs: string[] }>;
+
+    expect(body).toHaveLength(1);
+    expect(body[0]).toMatchObject({
+      id: "post-001",
+      tagSlugs: ["anime"],
+    });
+  });
+
+  it("returns an empty list for an unknown tag slug", async () => {
+    const response = await request("/posts?tag=not-a-tag");
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as unknown[];
+    expect(body).toEqual([]);
+  });
+
+  it("returns an empty list when no posts match the tag", async () => {
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM post_tags WHERE post_id = ?1").bind("post-001"),
+    ]);
+
+    const response = await request("/posts?tag=anime");
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as unknown[];
+    expect(body).toEqual([]);
+  });
 });
 
 describe("GET /posts/:id", () => {

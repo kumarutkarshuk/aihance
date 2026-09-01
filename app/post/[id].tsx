@@ -1,7 +1,8 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,9 +29,10 @@ export default function PostDetailScreen() {
 
   const tagLabels = useMemo(() => {
     const bySlug = new Map(tags.map((tag) => [tag.slug, tag.displayName]));
-    return (post?.tagSlugs ?? []).map(
-      (slug) => bySlug.get(slug) ?? slug.replace(/-/g, " "),
-    );
+    return (post?.tagSlugs ?? []).map((slug) => ({
+      slug,
+      label: bySlug.get(slug) ?? slug.replace(/-/g, " "),
+    }));
   }, [post?.tagSlugs, tags]);
 
   const loadPost = useCallback(async () => {
@@ -98,10 +100,18 @@ export default function PostDetailScreen() {
 
         {tagLabels.length > 0 ? (
           <View style={styles.tagRow}>
-            {tagLabels.map((label) => (
-              <View key={label} style={styles.tagChip}>
+            {tagLabels.map(({ slug, label }) => (
+              <Pressable
+                key={slug}
+                style={styles.tagChip}
+                onPress={() =>
+                  router.navigate({ pathname: "/", params: { tag: slug } })
+                }
+                accessibilityRole="button"
+                accessibilityLabel={`Filter Feed by ${label}`}
+              >
                 <Text style={styles.tagText}>{label}</Text>
-              </View>
+              </Pressable>
             ))}
           </View>
         ) : null}

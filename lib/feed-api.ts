@@ -45,8 +45,12 @@ async function fetchJson<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-export async function fetchPosts(): Promise<PostSummary[]> {
-  return fetchJson<PostSummary[]>("/posts");
+export async function fetchPosts(tagSlug?: string): Promise<PostSummary[]> {
+  const path =
+    tagSlug && tagSlug.length > 0
+      ? `/posts?tag=${encodeURIComponent(tagSlug)}`
+      : "/posts";
+  return fetchJson<PostSummary[]>(path);
 }
 
 export async function fetchPost(id: string): Promise<PostDetail> {

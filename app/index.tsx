@@ -1,27 +1,60 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Href, router } from "expo-router";
+import { Href, router, useLocalSearchParams } from "expo-router";
 import { FeedGrid } from "@/components/feed-grid";
 import { FeedErrorState, FeedLoadingState } from "@/components/feed-states";
-import { fetchPosts, type PostSummary } from "@/lib/feed-api";
+import { TagFilterBar } from "@/components/tag-filter-bar";
+import {
+  fetchPosts,
+  fetchTags,
+  type PostSummary,
+  type Tag,
+} from "@/lib/feed-api";
+
+function normalizeTagParam(tag: string | string[] | undefined): string | undefined {
+  if (typeof tag !== "string" || tag.trim().length === 0) {
+    return undefined;
+  }
+  return tag.trim();
+}
 
 export default function FeedScreen() {
+  const { tag: tagParam } = useLocalSearchParams<{ tag?: string | string[] }>();
+  const selectedTagSlug = useMemo(
+    () => normalizeTagParam(tagParam),
+    [tagParam],
+  );
+
   const [posts, setPosts] = useState<PostSummary[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadPosts = useCallback(async (isRefresh = false) => {
+  const loadFeed = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
     } else {
       setLoading(true);
+      setPosts([]);
     }
     setError(null);
 
     try {
-      const nextPosts = await fetchPosts();
-      setPosts(nextPosts);
+      const [postsResult, tagsResult] = await Promise.allSettled([
+        fetchPosts(selectedTagSlug),
+        fetchTags(),
+      ]);
+
+      if (tagsResult.status === "fulfilled") {
+        setTags(tagsResult.value);
+      }
+
+      if (postsResult.status === "fulfilled") {
+        setPosts(postsResult.value);
+      } else {
+        throw postsResult.reason;
+      }
     } catch (loadError) {
       const message =
         loadError instanceof Error
@@ -32,28 +65,65 @@ export default function FeedScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [selectedTagSlug]);
 
   useEffect(() => {
-    void loadPosts();
-  }, [loadPosts]);
+    void loadFeed();
+  }, [loadFeed]);
+
+  const handleSelectTag = useCallback((slug: string | undefined) => {
+    if (slug) {
+      router.setParams({ tag: slug });
+      return;
+    }
+
+    router.setParams({ tag: "" });
+  }, []);
 
   if (loading && posts.length === 0) {
-    return <FeedLoadingState />;
+    return (
+      <View style={styles.container}>
+        {tags.length > 0 ? (
+          <TagFilterBar
+            tags={tags}
+            selectedTagSlug={selectedTagSlug}
+            onSelectTag={handleSelectTag}
+          />
+        ) : null}
+        <FeedLoadingState />
+      </View>
+    );
   }
 
   if (error && posts.length === 0) {
     return (
-      <FeedErrorState message={error} onRetry={() => void loadPosts()} />
+      <View style={styles.container}>
+        {tags.length > 0 ? (
+          <TagFilterBar
+            tags={tags}
+            selectedTagSlug={selectedTagSlug}
+            onSelectTag={handleSelectTag}
+          />
+        ) : null}
+        <FeedErrorState message={error} onRetry={() => void loadFeed()} />
+      </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      <TagFilterBar
+        tags={tags}
+        selectedTagSlug={selectedTagSlug}
+        onSelectTag={handleSelectTag}
+      />
       {error ? (
         <View style={styles.errorBanner}>
           <Text style={styles.errorBannerText}>{error}</Text>
-          <Text style={styles.errorBannerAction} onPress={() => void loadPosts()}>
+          <Text
+            style={styles.errorBannerAction}
+            onPress={() => void loadFeed()}
+          >
             Retry
           </Text>
         </View>
@@ -61,7 +131,7 @@ export default function FeedScreen() {
       <FeedGrid
         posts={posts}
         refreshing={refreshing}
-        onRefresh={() => void loadPosts(true)}
+        onRefresh={() => void loadFeed(true)}
         onPressPost={(postId) =>
           router.push(`/post/${postId}` as Href)
         }

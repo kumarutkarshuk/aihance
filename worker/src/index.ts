@@ -142,12 +142,31 @@ async function listTags(db: D1Database) {
   }));
 }
 
-async function listPosts(baseUrl: string, env: Env): Promise<PostSummary[]> {
-  const { results } = await env.DB.prepare(
-    "SELECT id, image_key, created_at FROM posts ORDER BY created_at DESC",
-  ).all<Pick<PostRow, "id" | "image_key" | "created_at">>();
+async function listPosts(
+  baseUrl: string,
+  env: Env,
+  tagSlug?: string,
+): Promise<PostSummary[]> {
+  let results: Pick<PostRow, "id" | "image_key" | "created_at">[] | undefined;
 
-  const posts = results ?? [];
+  if (tagSlug) {
+    const filtered = await env.DB.prepare(
+      `SELECT p.id, p.image_key, p.created_at
+       FROM posts p
+       INNER JOIN post_tags pt ON pt.post_id = p.id AND pt.tag_slug = ?1
+       ORDER BY p.created_at DESC`,
+    )
+      .bind(tagSlug)
+      .all<Pick<PostRow, "id" | "image_key" | "created_at">>();
+    results = filtered.results ?? [];
+  } else {
+    const all = await env.DB.prepare(
+      "SELECT id, image_key, created_at FROM posts ORDER BY created_at DESC",
+    ).all<Pick<PostRow, "id" | "image_key" | "created_at">>();
+    results = all.results ?? [];
+  }
+
+  const posts = results;
   const tagMap = await getTagSlugsForPosts(
     env.DB,
     posts.map((post) => post.id),
@@ -309,7 +328,8 @@ export default {
       }
 
       if (request.method === "GET" && pathname === "/posts") {
-        const posts = await listPosts(baseUrl, env);
+        const tagSlug = url.searchParams.get("tag")?.trim() || undefined;
+        const posts = await listPosts(baseUrl, env, tagSlug);
         return jsonResponse(posts, 200, corsHeaders);
       }
 

@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "api:dev": "cd worker && bun run dev",
     "api:test": "cd worker && bun run test",
-    "api:seed": "cd worker && bash scripts/seed-dev.sh"
+    "api:seed": "cd worker && bash scripts/seed-dev.sh",
+    "api:seed:posts": "cd worker && bun run seed:posts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

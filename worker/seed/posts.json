@@ -1,0 +1,470 @@
+{
+  "posts": [
+    {
+      "tagSlugs": [
+        "anime"
+      ],
+      "prompt": "Soft anime portrait with pastel skin tones",
+      "imageSeed": "anime-01"
+    },
+    {
+      "tagSlugs": [
+        "anime",
+        "portrait"
+      ],
+      "prompt": "Studio Ghibli meadow scene at golden hour",
+      "imageSeed": "anime-02"
+    },
+    {
+      "tagSlugs": [
+        "anime"
+      ],
+      "prompt": "Bold shonen action pose with speed lines",
+      "imageSeed": "anime-03"
+    },
+    {
+      "tagSlugs": [
+        "anime"
+      ],
+      "prompt": null,
+      "imageSeed": "anime-04"
+    },
+    {
+      "tagSlugs": [
+        "watercolor"
+      ],
+      "prompt": "Loose botanical watercolor on textured paper",
+      "imageSeed": "watercolor-01"
+    },
+    {
+      "tagSlugs": [
+        "watercolor",
+        "portrait"
+      ],
+      "prompt": "Dreamy cityscape with wet-on-wet blues",
+      "imageSeed": "watercolor-02"
+    },
+    {
+      "tagSlugs": [
+        "watercolor"
+      ],
+      "prompt": "Muted portrait wash with visible brush strokes",
+      "imageSeed": "watercolor-03"
+    },
+    {
+      "tagSlugs": [
+        "watercolor"
+      ],
+      "prompt": null,
+      "imageSeed": "watercolor-04"
+    },
+    {
+      "tagSlugs": [
+        "cinematic"
+      ],
+      "prompt": "Wide anamorphic desert highway at dusk",
+      "imageSeed": "cinematic-01"
+    },
+    {
+      "tagSlugs": [
+        "cinematic",
+        "portrait"
+      ],
+      "prompt": "Moody rain-soaked alley with neon reflections",
+      "imageSeed": "cinematic-02"
+    },
+    {
+      "tagSlugs": [
+        "cinematic",
+        "landscape"
+      ],
+      "prompt": "Epic fantasy battle with volumetric light",
+      "imageSeed": "cinematic-03"
+    },
+    {
+      "tagSlugs": [
+        "cinematic"
+      ],
+      "prompt": "Film still of a lone figure on a cliff",
+      "imageSeed": "cinematic-04"
+    },
+    {
+      "tagSlugs": [
+        "portrait"
+      ],
+      "prompt": "Editorial beauty portrait with soft rim light",
+      "imageSeed": "portrait-01"
+    },
+    {
+      "tagSlugs": [
+        "portrait"
+      ],
+      "prompt": "Hyper-real close-up with catchlights",
+      "imageSeed": "portrait-02"
+    },
+    {
+      "tagSlugs": [
+        "portrait"
+      ],
+      "prompt": "Environmental portrait in a cozy studio",
+      "imageSeed": "portrait-03"
+    },
+    {
+      "tagSlugs": [
+        "portrait"
+      ],
+      "prompt": null,
+      "imageSeed": "portrait-04"
+    },
+    {
+      "tagSlugs": [
+        "landscape"
+      ],
+      "prompt": "Alpine lake mirror reflection at sunrise",
+      "imageSeed": "landscape-01"
+    },
+    {
+      "tagSlugs": [
+        "landscape"
+      ],
+      "prompt": "Rolling lavender fields under storm clouds",
+      "imageSeed": "landscape-02"
+    },
+    {
+      "tagSlugs": [
+        "landscape"
+      ],
+      "prompt": "Desert dunes with long shadows",
+      "imageSeed": "landscape-03"
+    },
+    {
+      "tagSlugs": [
+        "landscape"
+      ],
+      "prompt": "Foggy pine forest path",
+      "imageSeed": "landscape-04"
+    },
+    {
+      "tagSlugs": [
+        "cyberpunk"
+      ],
+      "prompt": "Neon-lit street samurai in the rain",
+      "imageSeed": "cyberpunk-01"
+    },
+    {
+      "tagSlugs": [
+        "cyberpunk",
+        "portrait"
+      ],
+      "prompt": "Holographic billboards over wet asphalt",
+      "imageSeed": "cyberpunk-02"
+    },
+    {
+      "tagSlugs": [
+        "cyberpunk"
+      ],
+      "prompt": "Chrome augmentations and magenta lighting",
+      "imageSeed": "cyberpunk-03"
+    },
+    {
+      "tagSlugs": [
+        "cyberpunk"
+      ],
+      "prompt": null,
+      "imageSeed": "cyberpunk-04"
+    },
+    {
+      "tagSlugs": [
+        "vintage"
+      ],
+      "prompt": "Faded 1970s Polaroid beach snapshot",
+      "imageSeed": "vintage-01"
+    },
+    {
+      "tagSlugs": [
+        "vintage",
+        "portrait"
+      ],
+      "prompt": "Sepia portrait with film grain and light leaks",
+      "imageSeed": "vintage-02"
+    },
+    {
+      "tagSlugs": [
+        "vintage"
+      ],
+      "prompt": "Retro diner scene with warm tungsten glow",
+      "imageSeed": "vintage-03"
+    },
+    {
+      "tagSlugs": [
+        "vintage"
+      ],
+      "prompt": "Kodachrome travel photo aesthetic",
+      "imageSeed": "vintage-04"
+    },
+    {
+      "tagSlugs": [
+        "minimalist"
+      ],
+      "prompt": "Single object on a white seamless backdrop",
+      "imageSeed": "minimalist-01"
+    },
+    {
+      "tagSlugs": [
+        "minimalist",
+        "portrait"
+      ],
+      "prompt": "Geometric shapes with generous negative space",
+      "imageSeed": "minimalist-02"
+    },
+    {
+      "tagSlugs": [
+        "minimalist"
+      ],
+      "prompt": "Muted palette still life with one accent color",
+      "imageSeed": "minimalist-03"
+    },
+    {
+      "tagSlugs": [
+        "minimalist"
+      ],
+      "prompt": null,
+      "imageSeed": "minimalist-04"
+    },
+    {
+      "tagSlugs": [
+        "fantasy"
+      ],
+      "prompt": "Crystal cave glowing with bioluminescent moss",
+      "imageSeed": "fantasy-01"
+    },
+    {
+      "tagSlugs": [
+        "fantasy",
+        "portrait"
+      ],
+      "prompt": "Dragon silhouette over a medieval castle",
+      "imageSeed": "fantasy-02"
+    },
+    {
+      "tagSlugs": [
+        "fantasy"
+      ],
+      "prompt": "Elven archer in an enchanted forest",
+      "imageSeed": "fantasy-03"
+    },
+    {
+      "tagSlugs": [
+        "fantasy"
+      ],
+      "prompt": "Floating islands above a sunset sea",
+      "imageSeed": "fantasy-04"
+    },
+    {
+      "tagSlugs": [
+        "sketch"
+      ],
+      "prompt": "Graphite portrait with cross-hatching",
+      "imageSeed": "sketch-01"
+    },
+    {
+      "tagSlugs": [
+        "sketch",
+        "portrait"
+      ],
+      "prompt": "Ink line art cityscape with loose washes",
+      "imageSeed": "sketch-02"
+    },
+    {
+      "tagSlugs": [
+        "sketch"
+      ],
+      "prompt": "Charcoal figure study on toned paper",
+      "imageSeed": "sketch-03"
+    },
+    {
+      "tagSlugs": [
+        "sketch"
+      ],
+      "prompt": null,
+      "imageSeed": "sketch-04"
+    },
+    {
+      "tagSlugs": [
+        "3d-render"
+      ],
+      "prompt": "Clay render product hero on soft gradient",
+      "imageSeed": "3d-render-01"
+    },
+    {
+      "tagSlugs": [
+        "3d-render",
+        "portrait"
+      ],
+      "prompt": "Isometric room with pastel materials",
+      "imageSeed": "3d-render-02"
+    },
+    {
+      "tagSlugs": [
+        "3d-render"
+      ],
+      "prompt": "Octane-style glass and caustics study",
+      "imageSeed": "3d-render-03"
+    },
+    {
+      "tagSlugs": [
+        "3d-render"
+      ],
+      "prompt": "Stylized 3D character turnaround",
+      "imageSeed": "3d-render-04"
+    },
+    {
+      "tagSlugs": [
+        "neon"
+      ],
+      "prompt": "Synthwave grid horizon with pink and cyan glow",
+      "imageSeed": "neon-01"
+    },
+    {
+      "tagSlugs": [
+        "neon",
+        "portrait"
+      ],
+      "prompt": "Neon sign typography over dark brick",
+      "imageSeed": "neon-02"
+    },
+    {
+      "tagSlugs": [
+        "neon"
+      ],
+      "prompt": "Electric portrait with UV paint accents",
+      "imageSeed": "neon-03"
+    },
+    {
+      "tagSlugs": [
+        "neon"
+      ],
+      "prompt": null,
+      "imageSeed": "neon-04"
+    },
+    {
+      "tagSlugs": [
+        "film-noir"
+      ],
+      "prompt": "High-contrast detective in venetian blind shadows",
+      "imageSeed": "film-noir-01"
+    },
+    {
+      "tagSlugs": [
+        "film-noir",
+        "portrait"
+      ],
+      "prompt": "Rainy noir city with hard key light",
+      "imageSeed": "film-noir-02"
+    },
+    {
+      "tagSlugs": [
+        "film-noir"
+      ],
+      "prompt": "Smoky jazz club portrait in monochrome",
+      "imageSeed": "film-noir-03"
+    },
+    {
+      "tagSlugs": [
+        "film-noir"
+      ],
+      "prompt": "Silhouette in a foggy alley",
+      "imageSeed": "film-noir-04"
+    },
+    {
+      "tagSlugs": [
+        "pop-art"
+      ],
+      "prompt": "Ben-Day dots portrait with bold primaries",
+      "imageSeed": "pop-art-01"
+    },
+    {
+      "tagSlugs": [
+        "pop-art",
+        "portrait"
+      ],
+      "prompt": "Comic panel explosion with halftone texture",
+      "imageSeed": "pop-art-02"
+    },
+    {
+      "tagSlugs": [
+        "pop-art"
+      ],
+      "prompt": "Warhol-style repeated color blocks",
+      "imageSeed": "pop-art-03"
+    },
+    {
+      "tagSlugs": [
+        "pop-art"
+      ],
+      "prompt": null,
+      "imageSeed": "pop-art-04"
+    },
+    {
+      "tagSlugs": [
+        "abstract"
+      ],
+      "prompt": "Flowing liquid gradients in jewel tones",
+      "imageSeed": "abstract-01"
+    },
+    {
+      "tagSlugs": [
+        "abstract",
+        "portrait"
+      ],
+      "prompt": "Organic shapes with marble texture",
+      "imageSeed": "abstract-02"
+    },
+    {
+      "tagSlugs": [
+        "abstract"
+      ],
+      "prompt": "Bold color field with subtle grain",
+      "imageSeed": "abstract-03"
+    },
+    {
+      "tagSlugs": [
+        "abstract"
+      ],
+      "prompt": "Generative wave interference pattern",
+      "imageSeed": "abstract-04"
+    },
+    {
+      "tagSlugs": [
+        "neon",
+        "cyberpunk"
+      ],
+      "prompt": "Blade Runner alley with pink haze",
+      "imageSeed": "bonus-neon-cyber-01"
+    },
+    {
+      "tagSlugs": [
+        "fantasy",
+        "cinematic"
+      ],
+      "prompt": null,
+      "imageSeed": "bonus-fantasy-cine-01"
+    },
+    {
+      "tagSlugs": [
+        "sketch",
+        "portrait"
+      ],
+      "prompt": "Quick pencil portrait study",
+      "imageSeed": "bonus-sketch-portrait-01"
+    },
+    {
+      "tagSlugs": [
+        "abstract",
+        "minimalist"
+      ],
+      "prompt": null,
+      "imageSeed": "bonus-abstract-min-01"
+    }
+  ]
+}

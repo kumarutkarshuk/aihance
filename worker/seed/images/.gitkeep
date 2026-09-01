@@ -1,0 +1,3 @@
+# Optional local images for launch seeding.
+# Add files named <imageSeed>.jpg (see seed/posts.json), then run:
+#   bun run seed:posts -- --force --images-dir seed/images

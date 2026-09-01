@@ -30,6 +30,51 @@ bun run api:dev    # start the Worker
 - `POST /admin/login` — password login, returns Bearer token
 - `GET /admin` — password-protected admin web page
 
+## Launch seed dataset
+
+The checked-in manifest at `seed/posts.json` defines **64 launch Posts** across all curated Tags. Tests in `test/seed-manifest.test.ts` verify the manifest meets launch criteria (50+ Posts, every Tag covered, mix of prompt and inspiration-only Posts).
+
+### One-time dev setup
+
+```bash
+bun run db:migrate
+bun run db:seed          # curated Tags only
+bun run dev              # in another terminal
+bun run seed:posts -- --offline --force
+```
+
+From the repo root:
+
+```bash
+bun run api:seed         # migrations + tags
+bun run api:dev          # start Worker
+bun run api:seed:posts -- --offline --force
+```
+
+### Seed options
+
+```bash
+bun run seed:posts -- [options]
+```
+
+- `--offline` — use tiny generated JPEG placeholders (no network). Good for local dev.
+- `--images-dir <path>` — use your own files named `<imageSeed>.jpg` (or `.png`/`.webp`) instead of picsum.
+- `--force` — delete existing Posts and re-upload the full manifest.
+- `--dry-run` — validate the manifest without uploading.
+- `--api-url <url>` — default `http://127.0.0.1:8787` (or `FEED_API_URL`).
+- `--token <token>` — admin Bearer token when auth is enabled (`ADMIN_TOKEN` env var).
+
+Without `--offline`, the script fetches deterministic images from [picsum.photos](https://picsum.photos) using each entry's `imageSeed`.
+
+### Replace or extend Posts before launch
+
+1. Edit `seed/posts.json` (each entry: `tagSlugs`, optional `prompt`, unique `imageSeed`).
+2. Optionally add real images under `seed/images/` as `<imageSeed>.jpg`.
+3. Run `bun run test` — manifest validation must pass.
+4. Run `bun run seed:posts -- --force --images-dir seed/images` against your deployed Worker.
+
+You can also add Posts one at a time via the admin page at `/admin` (see **Admin** below).
+
 ## Admin
 
 Set both secrets in Wrangler (or `.dev.vars` locally):

@@ -8,7 +8,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "wrangler d1 migrations apply aihance --local",
-    "db:seed": "wrangler d1 execute aihance --local --file=seed/seed.sql"
+    "db:seed": "wrangler d1 execute aihance --local --file=seed/seed.sql",
+    "seed:posts": "bun run scripts/seed-posts.ts"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.48",

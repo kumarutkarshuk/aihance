@@ -63,11 +63,15 @@ export async function fetchTags(): Promise<Tag[]> {
 
 export interface ReportResult {
   reportCount: number;
+  alreadyReported: boolean;
 }
 
-export async function reportPost(id: string): Promise<ReportResult> {
+export async function reportPost(id: string, reporterId: string): Promise<ReportResult> {
   return fetchJson<ReportResult>(`/posts/${encodeURIComponent(id)}/report`, {
     method: "POST",
+    headers: {
+      "X-Reporter-Id": reporterId,
+    },
   });
 }
 

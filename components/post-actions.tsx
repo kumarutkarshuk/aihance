@@ -1,7 +1,12 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { reportPost } from "@/lib/feed-api";
 import { copyPrompt, saveReferenceImage } from "@/lib/handoff";
+import {
+  getReporterId,
+  hasReportedPost,
+  markReportedPost,
+} from "@/lib/reporting";
 
 interface PostActionsProps {
   postId: string;
@@ -11,6 +16,11 @@ interface PostActionsProps {
 
 export function PostActions({ postId, prompt, imageUrl }: PostActionsProps) {
   const [busy, setBusy] = useState(false);
+  const [reported, setReported] = useState(false);
+
+  useEffect(() => {
+    void hasReportedPost(postId).then(setReported);
+  }, [postId]);
 
   const runAction = useCallback(
     async (action: () => Promise<string | void>, fallbackError: string) => {
@@ -57,19 +67,21 @@ export function PostActions({ postId, prompt, imageUrl }: PostActionsProps) {
   };
 
   const onReport = () => {
+    if (reported) {
+      return;
+    }
+
     void runAction(async () => {
-      await reportPost(postId);
-      return "Report sent";
+      const reporterId = await getReporterId();
+      const result = await reportPost(postId, reporterId);
+      await markReportedPost(postId);
+      setReported(true);
+      return result.alreadyReported ? "Already reported" : "Report sent";
     }, "Could not send Report. Try again.");
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>Handoff</Text>
-      <Text style={styles.hint}>
-        Copy the Prompt and save the image, then Restyle in ChatGPT.
-      </Text>
-
       {prompt ? (
         <Pressable
           style={[styles.button, busy && styles.buttonDisabled]}
@@ -95,13 +107,19 @@ export function PostActions({ postId, prompt, imageUrl }: PostActionsProps) {
       ) : null}
 
       <Pressable
-        style={[styles.reportButton, busy && styles.buttonDisabled]}
+        style={[
+          styles.reportButton,
+          (busy || reported) && styles.buttonDisabled,
+          reported && styles.reportedButton,
+        ]}
         onPress={onReport}
-        disabled={busy}
+        disabled={busy || reported}
         accessibilityRole="button"
-        accessibilityLabel="Report this Post"
+        accessibilityLabel={reported ? "Post already reported" : "Report this Post"}
       >
-        <Text style={styles.reportLabel}>Report</Text>
+        <Text style={[styles.reportLabel, reported && styles.reportedLabel]}>
+          {reported ? "Reported" : "Report"}
+        </Text>
       </Pressable>
     </View>
   );
@@ -148,5 +166,12 @@ const styles = StyleSheet.create({
     color: "#a33",
     fontSize: 16,
     fontWeight: "600",
+  },
+  reportedButton: {
+    borderColor: "#ddd",
+    backgroundColor: "#fafafa",
+  },
+  reportedLabel: {
+    color: "#888",
   },
 });

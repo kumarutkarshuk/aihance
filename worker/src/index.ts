@@ -335,6 +335,7 @@ async function deletePost(env: Env, id: string): Promise<boolean> {
   }
 
   await env.DB.batch([
+    env.DB.prepare("DELETE FROM reports WHERE post_id = ?1").bind(id),
     env.DB.prepare("DELETE FROM post_tags WHERE post_id = ?1").bind(id),
     env.DB.prepare("DELETE FROM posts WHERE id = ?1").bind(id),
   ]);
@@ -365,18 +366,68 @@ async function adminLogin(request: Request, env: Env): Promise<Response> {
 async function reportPost(
   env: Env,
   id: string,
-): Promise<{ reportCount: number } | null> {
+  reporterId?: string,
+): Promise<{ reportCount: number; alreadyReported: boolean } | null> {
+  const post = await env.DB.prepare(
+    "SELECT report_count FROM posts WHERE id = ?1",
+  )
+    .bind(id)
+    .first<{ report_count: number }>();
+
+  if (!post) {
+    return null;
+  }
+
+  if (reporterId) {
+    const existing = await env.DB.prepare(
+      "SELECT 1 FROM reports WHERE post_id = ?1 AND reporter_id = ?2",
+    )
+      .bind(id, reporterId)
+      .first();
+
+    if (existing) {
+      return {
+        reportCount: post.report_count,
+        alreadyReported: true,
+      };
+    }
+
+    const createdAt = new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        "INSERT INTO reports (post_id, reporter_id, created_at) VALUES (?1, ?2, ?3)",
+      ).bind(id, reporterId, createdAt),
+      env.DB.prepare(
+        "UPDATE posts SET report_count = report_count + 1 WHERE id = ?1",
+      ).bind(id),
+    ]);
+
+    const updated = await env.DB.prepare(
+      "SELECT report_count FROM posts WHERE id = ?1",
+    )
+      .bind(id)
+      .first<{ report_count: number }>();
+
+    if (!updated) {
+      return null;
+    }
+
+    return {
+      reportCount: updated.report_count,
+      alreadyReported: false,
+    };
+  }
+
   const updated = await env.DB.prepare(
     "UPDATE posts SET report_count = report_count + 1 WHERE id = ?1 RETURNING report_count",
   )
     .bind(id)
     .first<{ report_count: number }>();
 
-  if (!updated) {
-    return null;
-  }
-
-  return { reportCount: updated.report_count };
+  return {
+    reportCount: updated!.report_count,
+    alreadyReported: false,
+  };
 }
 
 async function serveImage(env: Env, key: string): Promise<Response> {
@@ -404,7 +455,7 @@ export default {
         headers: {
           ...corsHeaders,
           "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
-          "access-control-allow-headers": "Content-Type, Authorization",
+          "access-control-allow-headers": "Content-Type, Authorization, X-Reporter-Id",
         },
       });
     }
@@ -461,9 +512,11 @@ export default {
 
       const reportMatch = pathname.match(/^\/posts\/([^/]+)\/report$/);
       if (request.method === "POST" && reportMatch) {
+        const reporterId = request.headers.get("X-Reporter-Id")?.trim() || undefined;
         const reported = await reportPost(
           env,
           decodeURIComponent(reportMatch[1]),
+          reporterId,
         );
         if (!reported) {
           return errorResponse("Post not found", 404, corsHeaders);

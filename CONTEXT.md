@@ -2,6 +2,12 @@
 
 A community app for discovering image styles and applying them to your own photos. Users browse a feed of Posts, copy a style or prompt, and Restyle their image — first by Handoff to an external AI app, later in-app.
 
+## Auth
+
+**v1:** Consumers browse, Handoff, and Report without sign-in. Admin moderation uses a shared secret.
+
+**v1+:** Consumers and Producers sign in (Apple/Google via better-auth; see ADR-0002). Sign-in is required to use the app and binds per-user actions like Report and posting to a real account instead of client-supplied ids.
+
 ## Language
 
 **Post**:

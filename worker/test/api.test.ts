@@ -15,6 +15,10 @@ function authEnv(): TestEnv {
   return { ...env, ADMIN_TOKEN: TEST_ADMIN_TOKEN, ADMIN_PASSWORD: TEST_ADMIN_PASSWORD };
 }
 
+function publicEnv(): TestEnv {
+  return { ...env, ADMIN_TOKEN: undefined, ADMIN_PASSWORD: undefined };
+}
+
 async function request(
   path: string,
   init?: RequestInit,
@@ -40,6 +44,9 @@ async function applySchema() {
   );
   await env.DB.exec(
     "CREATE TABLE IF NOT EXISTS post_tags (post_id TEXT NOT NULL, tag_slug TEXT NOT NULL, PRIMARY KEY (post_id, tag_slug))",
+  );
+  await env.DB.exec(
+    "CREATE TABLE IF NOT EXISTS reports (post_id TEXT NOT NULL, reporter_id TEXT NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY (post_id, reporter_id))",
   );
 }
 
@@ -196,7 +203,7 @@ describe("POST /posts", () => {
     const response = await request("/posts", {
       method: "POST",
       body: formData,
-    });
+    }, publicEnv());
 
     expect(response.status).toBe(201);
     const body = (await response.json()) as Record<string, unknown>;
@@ -231,7 +238,7 @@ describe("POST /posts", () => {
     const response = await request("/posts", {
       method: "POST",
       body: formData,
-    });
+    }, publicEnv());
 
     expect(response.status).toBe(201);
     const body = (await response.json()) as Record<string, unknown>;
@@ -245,7 +252,7 @@ describe("POST /posts", () => {
     const response = await request("/posts", {
       method: "POST",
       body: formData,
-    });
+    }, publicEnv());
 
     expect(response.status).toBe(400);
   });
@@ -263,7 +270,7 @@ describe("POST /posts", () => {
     const response = await request("/posts", {
       method: "POST",
       body: formData,
-    });
+    }, publicEnv());
 
     expect(response.status).toBe(400);
   });
@@ -273,11 +280,45 @@ describe("POST /posts/:id/report", () => {
   it("increments the post report count", async () => {
     const first = await request("/posts/post-001/report", { method: "POST" });
     expect(first.status).toBe(200);
-    expect(await first.json()).toEqual({ reportCount: 1 });
+    expect(await first.json()).toEqual({ reportCount: 1, alreadyReported: false });
 
     const second = await request("/posts/post-001/report", { method: "POST" });
     expect(second.status).toBe(200);
-    expect(await second.json()).toEqual({ reportCount: 2 });
+    expect(await second.json()).toEqual({ reportCount: 2, alreadyReported: false });
+  });
+
+  it("does not increment again for the same reporter id", async () => {
+    const headers = { "X-Reporter-Id": "device-abc" };
+
+    const first = await request("/posts/post-001/report", {
+      method: "POST",
+      headers,
+    });
+    expect(first.status).toBe(200);
+    expect(await first.json()).toEqual({ reportCount: 1, alreadyReported: false });
+
+    const second = await request("/posts/post-001/report", {
+      method: "POST",
+      headers,
+    });
+    expect(second.status).toBe(200);
+    expect(await second.json()).toEqual({ reportCount: 1, alreadyReported: true });
+  });
+
+  it("counts different reporters separately", async () => {
+    const first = await request("/posts/post-001/report", {
+      method: "POST",
+      headers: { "X-Reporter-Id": "device-a" },
+    });
+    expect(first.status).toBe(200);
+    expect(await first.json()).toEqual({ reportCount: 1, alreadyReported: false });
+
+    const second = await request("/posts/post-001/report", {
+      method: "POST",
+      headers: { "X-Reporter-Id": "device-b" },
+    });
+    expect(second.status).toBe(200);
+    expect(await second.json()).toEqual({ reportCount: 2, alreadyReported: false });
   });
 
   it("returns 404 for an unknown post", async () => {
@@ -443,6 +484,23 @@ describe("DELETE /posts/:id", () => {
 
     const imageResponse = await request("/images/post-001.jpg");
     expect(imageResponse.status).toBe(404);
+  });
+
+  it("removes the post when it has reports", async () => {
+    await request("/posts/post-001/report", {
+      method: "POST",
+      headers: { "X-Reporter-Id": "device-abc" },
+    });
+
+    const response = await request(
+      "/posts/post-001",
+      { method: "DELETE", headers: bearerHeaders() },
+      authEnv(),
+    );
+    expect(response.status).toBe(204);
+
+    const detailResponse = await request("/posts/post-001");
+    expect(detailResponse.status).toBe(404);
   });
 
   it("returns 404 for an unknown post", async () => {

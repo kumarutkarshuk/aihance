@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, fonts } from "@/lib/theme";
 import { Href, router, useLocalSearchParams } from "expo-router";
 import { FeedGrid } from "@/components/feed-grid";
+import { FeedHeader } from "@/components/feed-header";
+import { FeedSkeletonGrid } from "@/components/feed-skeleton-grid";
 import {
   FeedEmptyState,
   FeedErrorState,
-  FeedLoadingState,
 } from "@/components/feed-states";
 import { TagFilterBar } from "@/components/tag-filter-bar";
 import {
@@ -92,44 +94,20 @@ export default function FeedScreen() {
     return tags.find((tag) => tag.slug === selectedTagSlug)?.displayName;
   }, [selectedTagSlug, tags]);
 
-  if (loading && posts.length === 0) {
-    return (
-      <View style={styles.container}>
-        {tags.length > 0 ? (
-          <TagFilterBar
-            tags={tags}
-            selectedTagSlug={selectedTagSlug}
-            onSelectTag={handleSelectTag}
-          />
-        ) : null}
-        <FeedLoadingState />
-      </View>
-    );
-  }
-
-  if (error && posts.length === 0) {
-    return (
-      <View style={styles.container}>
-        {tags.length > 0 ? (
-          <TagFilterBar
-            tags={tags}
-            selectedTagSlug={selectedTagSlug}
-            onSelectTag={handleSelectTag}
-          />
-        ) : null}
-        <FeedErrorState message={error} onRetry={() => void loadFeed()} />
-      </View>
-    );
-  }
+  const showSkeleton = loading && posts.length === 0 && !error;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <FeedHeader />
       <TagFilterBar
         tags={tags}
         selectedTagSlug={selectedTagSlug}
         onSelectTag={handleSelectTag}
       />
-      {error ? (
+      {error && posts.length === 0 ? (
+        <FeedErrorState message={error} onRetry={() => void loadFeed()} />
+      ) : null}
+      {error && posts.length > 0 ? (
         <View style={styles.errorBanner}>
           <Text style={styles.errorBannerText}>{error}</Text>
           <Text
@@ -140,23 +118,31 @@ export default function FeedScreen() {
           </Text>
         </View>
       ) : null}
-      <FeedGrid
-        posts={posts}
-        refreshing={refreshing}
-        onRefresh={() => void loadFeed(true)}
-        onPressPost={(postId) =>
-          router.push(`/post/${postId}` as Href)
-        }
-        emptyComponent={
-          <FeedEmptyState
-            tagDisplayName={selectedTagDisplayName}
-            onClearFilter={
-              selectedTagSlug ? () => handleSelectTag(undefined) : undefined
-            }
-          />
-        }
-      />
-    </View>
+      {showSkeleton ? (
+        <FeedSkeletonGrid
+          refreshing={refreshing}
+          onRefresh={() => void loadFeed(true)}
+        />
+      ) : null}
+      {!showSkeleton && !(error && posts.length === 0) ? (
+        <FeedGrid
+          posts={posts}
+          refreshing={refreshing}
+          onRefresh={() => void loadFeed(true)}
+          onPressPost={(postId) =>
+            router.push(`/post/${postId}` as Href)
+          }
+          emptyComponent={
+            <FeedEmptyState
+              tagDisplayName={selectedTagDisplayName}
+              onClearFilter={
+                selectedTagSlug ? () => handleSelectTag(undefined) : undefined
+              }
+            />
+          }
+        />
+      ) : null}
+    </SafeAreaView>
   );
 }
 

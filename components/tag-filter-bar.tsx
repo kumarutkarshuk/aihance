@@ -1,12 +1,8 @@
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { Tag } from "@/lib/feed-api";
-import { colors, fonts } from "@/lib/theme";
+import { colors, fonts, gradients, radii } from "@/lib/theme";
+import { PlainBorderPill } from "@/components/ui/plain-border-pill";
 
 interface TagFilterBarProps {
   tags: Tag[];
@@ -14,11 +10,52 @@ interface TagFilterBarProps {
   onSelectTag: (slug: string | undefined) => void;
 }
 
+interface TagChipProps {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  accessibilityLabel: string;
+}
+
+function TagChip({ label, selected, onPress, accessibilityLabel }: TagChipProps) {
+  if (selected) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ selected: true }}
+        style={({ pressed }) => [pressed && styles.pressed]}
+      >
+        <LinearGradient
+          colors={[...gradients.selectedPill]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.selectedChip}
+        >
+          <Text style={styles.selectedChipText}>{label}</Text>
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
+  return (
+    <PlainBorderPill
+      label={label}
+      onPress={onPress}
+      accessibilityLabel={accessibilityLabel}
+      style={styles.unselectedChip}
+    />
+  );
+}
+
 export function TagFilterBar({
   tags,
   selectedTagSlug,
   onSelectTag,
 }: TagFilterBarProps) {
+  const allSelected = !selectedTagSlug;
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -26,35 +63,22 @@ export function TagFilterBar({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {selectedTagSlug ? (
-          <Pressable
-            style={styles.clearChip}
-            onPress={() => onSelectTag(undefined)}
-            accessibilityRole="button"
-            accessibilityLabel="Clear tag filter"
-          >
-            <Text style={styles.clearChipText}>Clear</Text>
-          </Pressable>
-        ) : null}
+        <TagChip
+          label="All"
+          selected={allSelected}
+          onPress={() => onSelectTag(undefined)}
+          accessibilityLabel="Show all Posts"
+        />
         {tags.map((tag) => {
           const selected = tag.slug === selectedTagSlug;
           return (
-            <Pressable
+            <TagChip
               key={tag.slug}
-              style={[styles.chip, selected && styles.chipSelected]}
-              onPress={() =>
-                onSelectTag(selected ? undefined : tag.slug)
-              }
-              accessibilityRole="button"
+              label={tag.displayName}
+              selected={selected}
+              onPress={() => onSelectTag(selected ? undefined : tag.slug)}
               accessibilityLabel={`Filter by ${tag.displayName}`}
-              accessibilityState={{ selected }}
-            >
-              <Text
-                style={[styles.chipText, selected && styles.chipTextSelected]}
-              >
-                {tag.displayName}
-              </Text>
-            </Pressable>
+            />
           );
         })}
       </ScrollView>
@@ -75,36 +99,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  chip: {
-    backgroundColor: colors.surface,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+  selectedChip: {
+    borderRadius: radii.pill,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  chipSelected: {
-    backgroundColor: colors.foreground,
-    borderColor: colors.foreground,
-  },
-  chipText: {
+  selectedChipText: {
     fontFamily: fonts.bodyMedium,
     fontSize: 14,
     color: colors.foreground,
   },
-  chipTextSelected: {
-    color: colors.background,
-  },
-  clearChip: {
-    borderRadius: 999,
+  unselectedChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
   },
-  clearChipText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 14,
-    color: colors.muted,
+  pressed: {
+    opacity: 0.85,
   },
 });

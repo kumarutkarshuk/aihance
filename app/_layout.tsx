@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { View } from "react-native";
 import { Stack } from "expo-router";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -17,12 +18,12 @@ SplashScreen.preventAutoHideAsync();
 
 function DarkShell({ children }: { children: ReactNode }) {
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="light" />
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         {children}
       </View>
-    </>
+    </SafeAreaProvider>
   );
 }
 

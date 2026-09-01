@@ -1,12 +1,23 @@
-import { Image } from "expo-image";
-import type { ReactElement } from "react";
+import { Image, type ImageLoadEventData } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { useCallback, useMemo, useState, type ReactElement } from "react";
 import {
-  FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
+  useWindowDimensions,
+  View,
 } from "react-native";
+import { GlassFrame } from "@/components/ui/glass-frame";
 import type { PostSummary } from "@/lib/feed-api";
+import {
+  DEFAULT_THUMBNAIL_ASPECT_RATIO,
+  distributeToColumns,
+  estimateCellHeight,
+  MASONRY_COLUMN_COUNT,
+  MASONRY_GAP,
+} from "@/lib/masonry-layout";
 import { colors } from "@/lib/theme";
 
 interface FeedGridProps {
@@ -17,7 +28,40 @@ interface FeedGridProps {
   emptyComponent?: ReactElement;
 }
 
-const NUM_COLUMNS = 2;
+interface MasonryCellProps {
+  post: PostSummary;
+  columnWidth: number;
+  onPressPost: (postId: string) => void;
+}
+
+function MasonryCell({ post, columnWidth, onPressPost }: MasonryCellProps) {
+  const [aspectRatio, setAspectRatio] = useState(DEFAULT_THUMBNAIL_ASPECT_RATIO);
+
+  const handleLoad = useCallback((event: ImageLoadEventData) => {
+    const { width, height } = event.source;
+    if (width > 0 && height > 0) {
+      setAspectRatio(width / height);
+    }
+  }, []);
+
+  return (
+    <Pressable
+      onPress={() => onPressPost(post.id)}
+      accessibilityRole="button"
+      accessibilityLabel={`Open post ${post.id}`}
+    >
+      <GlassFrame style={[styles.cell, { width: columnWidth, aspectRatio }]}>
+        <Image
+          source={{ uri: post.imageUrl }}
+          style={styles.thumbnail}
+          contentFit="cover"
+          transition={250}
+          onLoad={handleLoad}
+        />
+      </GlassFrame>
+    </Pressable>
+  );
+}
 
 export function FeedGrid({
   posts,
@@ -26,66 +70,123 @@ export function FeedGrid({
   onPressPost,
   emptyComponent,
 }: FeedGridProps) {
-  return (
-    <FlatList
-      data={posts}
-      keyExtractor={(item) => item.id}
-      numColumns={NUM_COLUMNS}
-      contentContainerStyle={[
-        styles.listContent,
-        posts.length === 0 && styles.listContentEmpty,
-      ]}
-      columnWrapperStyle={posts.length > 0 ? styles.row : undefined}
-      ListEmptyComponent={emptyComponent}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={colors.foreground}
-          colors={[colors.foreground]}
-        />
-      }
-      renderItem={({ item }) => (
-        <Pressable
-          style={styles.cell}
-          onPress={() => onPressPost(item.id)}
-          accessibilityRole="button"
-          accessibilityLabel={`Open post ${item.id}`}
+  const { width: screenWidth } = useWindowDimensions();
+  const columnWidth =
+    (screenWidth - MASONRY_GAP * (MASONRY_COLUMN_COUNT + 1)) /
+    MASONRY_COLUMN_COUNT;
+
+  const columns = useMemo(
+    () =>
+      distributeToColumns(
+        posts,
+        MASONRY_COLUMN_COUNT,
+        () => estimateCellHeight(columnWidth, DEFAULT_THUMBNAIL_ASPECT_RATIO),
+      ),
+    [posts, columnWidth],
+  );
+
+  if (posts.length === 0) {
+    return (
+      <View style={styles.container}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.emptyContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.foreground}
+              colors={[colors.foreground]}
+            />
+          }
         >
-          <Image
-            source={{ uri: item.imageUrl }}
-            style={styles.thumbnail}
-            contentFit="cover"
-            transition={200}
+          {emptyComponent}
+        </ScrollView>
+        <LinearGradient
+          colors={["transparent", colors.background]}
+          style={styles.bottomFade}
+          pointerEvents="none"
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.foreground}
+            colors={[colors.foreground]}
           />
-        </Pressable>
-      )}
-    />
+        }
+      >
+        <View style={styles.row}>
+          {columns.map((column, columnIndex) => (
+            <View key={`column-${columnIndex}`} style={styles.column}>
+              {column.map((post) => (
+                <MasonryCell
+                  key={post.id}
+                  post={post}
+                  columnWidth={columnWidth}
+                  onPressPost={onPressPost}
+                />
+              ))}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+      <LinearGradient
+        colors={["transparent", colors.background]}
+        style={styles.bottomFade}
+        pointerEvents="none"
+      />
+    </View>
   );
 }
 
-const GAP = 8;
+const BOTTOM_FADE_HEIGHT = 150;
 
 const styles = StyleSheet.create({
-  listContent: {
-    padding: GAP,
-    gap: GAP,
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
-  listContentEmpty: {
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    padding: MASONRY_GAP,
+    paddingBottom: MASONRY_GAP + BOTTOM_FADE_HEIGHT / 2,
+  },
+  emptyContent: {
     flexGrow: 1,
+    paddingBottom: BOTTOM_FADE_HEIGHT / 2,
   },
   row: {
-    gap: GAP,
+    flexDirection: "row",
+    gap: MASONRY_GAP,
+  },
+  column: {
+    flex: 1,
+    gap: MASONRY_GAP,
   },
   cell: {
-    flex: 1,
-    aspectRatio: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: colors.placeholder,
+    width: "100%",
   },
   thumbnail: {
     width: "100%",
     height: "100%",
+  },
+  bottomFade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: BOTTOM_FADE_HEIGHT,
   },
 });

@@ -91,6 +91,7 @@ export function FeedGrid({
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.emptyContent}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -116,6 +117,7 @@ export function FeedGrid({
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

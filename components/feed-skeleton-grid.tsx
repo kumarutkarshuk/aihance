@@ -53,6 +53,7 @@ export function FeedSkeletonGrid({
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           onRefresh ? (
             <RefreshControl
